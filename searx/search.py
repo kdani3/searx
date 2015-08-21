@@ -26,7 +26,6 @@ from urlparse import urlparse, unquote
 from searx.engines import (
     categories, engines
 )
-from searx.languages import language_codes
 from searx.utils import gen_useragent, get_blocked_engines
 from searx.query import Query
 from searx import logger
@@ -323,10 +322,9 @@ class Search(object):
         self.categories = []
         self.paging = False
         self.pageno = 1
-        self.lang = 'all'
 
         # set blocked engines
-        self.blocked_engines = get_blocked_engines(engines, request.cookies)
+        self.blocked_engines = get_blocked_engines(engines, request.user_config)
 
         self.results = []
         self.suggestions = set()
@@ -334,10 +332,7 @@ class Search(object):
         self.infoboxes = []
         self.request_data = {}
 
-        # set specific language if set
-        if request.cookies.get('language')\
-           and request.cookies['language'] in (x[0] for x in language_codes):
-            self.lang = request.cookies['language']
+        self.lang = request.user_config.get("language")
 
         # set request method
         if request.method == 'POST':
@@ -415,8 +410,7 @@ class Search(object):
             # using user-defined default-configuration which
             # (is stored in cookie)
             if not self.categories:
-                cookie_categories = request.cookies.get('categories', '')
-                cookie_categories = cookie_categories.split(',')
+                cookie_categories = request.user_config.get('categories')
                 for ccateg in cookie_categories:
                     if ccateg in categories:
                         self.categories.append(ccateg)
@@ -480,7 +474,7 @@ class Search(object):
 
             try:
                 # 0 = None, 1 = Moderate, 2 = Strict
-                request_params['safesearch'] = int(request.cookies.get('safesearch', 1))
+                request_params['safesearch'] = int(request.user_config.get('safesearch'))
             except ValueError:
                 request_params['safesearch'] = 1
 
